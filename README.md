@@ -1,34 +1,31 @@
 # VTM V5 Kindred Character Builder
 
 A browser-based character creator for **Vampire: The Masquerade (5th Edition)**.
-Create and customize Kindred characters, allocate attributes and skills with point budgets, select clans, generations, and Disciplines, and export a **fillable PDF** character sheet — all directly in the browser.
+Create and customize Kindred characters, allocate attributes and skills with point budgets, select clans, generations, and Disciplines, and export a **fillable PDF** character sheet.
 
 ---
 
 ## Features
 
-* **Complete Clan Support**
+* **Clan Support**
   Includes all core and expanded clans: Brujah, Gangrel, Malkavian, Nosferatu, Toreador, Tremere, Ventrue, Caitiff, Banu Haqim, Hecata, Lasombra, The Ministry, Ravnos, Salubri, and Tzimisce.
 
-* **Structured Attribute and Skill Allocation**
+* **Attribute and Skill Allocation**
   Standard V5 creation spreads (Attributes 4/3/3, Skills 11/7/4) with visual dot interfaces and group priority selection.
   Includes a “Free Allocation” mode for homebrew or variant chronicle rules.
 
-* **Discipline and Power Selection**
+* **Disciplines and Powers Selection**
   In-clan Disciplines are automatically highlighted; add powers for each dot you assign. Out-of-clan options are also supported.
 
-* **Dice Roller with Hunger Integration**
+* **Dice Roller & Hunger Integration**
   Includes proper V5 dice logic—success counting, critical pairs, messy criticals, bestial failures, and difficulty comparison.
 
-* **Local Save and JSON Export**
-  Autosaves in browser storage. You can export or import characters as `.json` files for easy sharing or backup.
-
-* **Fillable PDF Export**
+* **Export to PDF**
   Generates a one-page fillable PDF containing all key character data and dot representations for attributes, skills, and disciplines.
 
 ---
 
-## Using the Builder
+## How to use
 
 1. **Identity** – Choose your Clan, Generation, and Predator Type. Add name, concept, chronicle, and sire.
 2. **Attributes** – Select one group as Primary, one as Secondary, one as Tertiary, and assign dots according to the point budget.
@@ -41,7 +38,7 @@ Create and customize Kindred characters, allocate attributes and skills with poi
 
 ---
 
-## Dice System Reference
+## Game Mechanics References
 
 * **Successes**: Rolls of 6–9 count as 1 success.
 * **Criticals**: Every pair of 10s adds +2 successes.
