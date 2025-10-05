@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VTM V5 Kindred Character Builder</title>
+
+  <!-- TailwindCSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Icons (Lucide) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- pdf-lib for fillable PDFs -->
+  <script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+
+  <style>
+    /* Theme tokens */
+    :root {
+      --bg: #0b0e12;
+      --panel: #0f1217;
+      --panel-2: #0c0f14;
+      --muted: #151922;
+      --ink: #e8ebf1;
+      --ink-2: #c1c7d3;
+      --accent: #b91c1c; /* crimson */
+      --accent-2: #7f1d1d;
+      --ring: rgba(185, 28, 28, .35);
+      --ok: #34d399;
+      --warn: #f59e0b;
+      --bad: #f87171;
+    }
+    html, body { background: var(--bg); color: var(--ink); }
+    .glass {
+      background:
+        radial-gradient(1200px 600px at 70% -10%, rgba(185,28,28,.06), transparent 40%),
+        linear-gradient(180deg, rgba(255,255,255,.02), transparent 60%),
+        var(--panel);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 1rem;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.02),
+        0 12px 30px rgba(0,0,0,.45);
+    }
+    .glass-2 {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), transparent 50%),
+        var(--panel-2);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 1rem;
+    }
+    .btn {
+      background: #131823;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: .75rem;
+      padding: .6rem .9rem;
+      transition: transform .08s ease, border-color .2s ease;
+    }
+    .btn:hover { border-color: rgba(255,255,255,.14); }
+    .btn:active { transform: translateY(1px); }
+    .btn-accent {
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      border-color: rgba(255,255,255,.12);
+      color: white;
+    }
+    .input, select, textarea {
+      background: #0d1118;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: .6rem;
+      padding: .65rem .7rem;
+      width: 100%;
+      transition: box-shadow .2s ease, border-color .2s ease;
+    }
+    .input:focus, select:focus, textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px var(--ring);
+      border-color: var(--accent-2);
+    }
+    .pill {
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 999px;
+      padding: .25rem .6rem;
+      background: #0e131c;
+      font-size: .8rem;
+    }
+    .mini { font-size: .85rem; color: var(--ink-2); }
+    .title { font-weight: 800; letter-spacing: .02em; }
+    .subtle { opacity: .8; }
+
+    /* Dots */
+    .dot {
+      width: 1.2rem; height: 1.2rem;
+      border-radius: 999px;
+      border: 1px solid #3a4253;
+      background: #0c1118;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-right: .28rem;
+      transition: background .15s ease, transform .07s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .dot:hover { border-color: #5a667e; }
+    .dot.active {
+      background: radial-gradient(80% 80% at 40% 30%, #ef2f49, #b91727);
+      border-color: #ef2f49;
+      box-shadow: 0 0 0 2px rgba(239,47,73,.25);
+    }
+    .dot:active { transform: translateY(1px); }
+
+    /* Sidebar nav */
+    .nav-link {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .55rem .7rem;
+      border-radius: .6rem;
+      color: var(--ink-2);
+      border: 1px solid transparent;
+      transition: background .15s ease, border-color .2s ease, color .2s ease;
+    }
+    .nav-link:hover { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.06); color: var(--ink); }
+
+    .hr { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
+
+    /* Small motion */
+    [data-animate="fade-in"] { opacity: 0; transform: translateY(6px); animation: fadeIn .35s ease forwards; }
+    @keyframes fadeIn { to { opacity: 1; transform: none; } }
+
+    /* Dice roller chips */
+    .die {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 2.1rem; height: 2.1rem; padding: 0 .2rem;
+      border-radius: .55rem;
+      border: 1px solid rgba(255,255,255,.10);
+      background: #0d121a;
+      font-weight: 700;
+      margin: .18rem;
+      box-shadow: inset 0 -12px 25px rgba(0,0,0,.35);
+      transition: transform .08s ease, border-color .2s ease;
+    }
+    .die.hunger { border-color: rgba(185,28,28,.35); background: radial-gradient(100% 80% at 50% 10%, rgba(185,28,28,.12), #0d121a 60%); }
+    .die:active { transform: translateY(1px); }
+    .die.crit::after { content: "★"; margin-left: .18rem; font-size: .9rem; opacity: .9; }
+
+    /* Responsive sidebar */
+    @media (max-width: 1023px) {
+      #sidebar { position: static; transform: none !important; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen selection:bg-red-900/40">
+  <!-- Topbar -->
+  <header class="sticky top-0 z-50 backdrop-blur bg-black/40 border-b border-white/5">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <svg width="28" height="28" viewBox="0 0 24 24" class="text-red-500"><path fill="currentColor" d="M12 2c-1.8 0-3 2.2-3 4c0 1.5.6 2.7 1.5 3.4c-.3.4-.5.9-.5 1.6c0 1 .5 1.7 1.2 2.1c-.7.8-1.2 1.8-1.2 3c0 2.2 1.8 4 4 4s4-1.8 4-4c0-1.2-.5-2.2-1.2-3c.7-.4 1.2-1.1 1.2-2.1c0-.7-.2-1.2-.5-1.6c.9-.7 1.5-1.9 1.5-3.4c0-1.8-1.2-4-3-4c-1 0-1.8.6-2.3 1.4C13.8 2.6 13 2 12 2Z"/></svg>
+      <h1 class="text-lg font-semibold tracking-wide">V5 Kindred Character Builder</h1>
+
+      <div class="ml-auto flex flex-wrap gap-2">
+        <button id="btnNew" class="btn">New</button>
+        <button id="btnSave" class="btn">Save</button>
+        <button id="btnLoad" class="btn">Load</button>
+        <button id="btnExport" class="btn">Export JSON</button>
+        <label class="btn cursor-pointer">Import JSON<input id="importJson" type="file" accept="application/json" class="hidden" /></label>
+        <button id="btnPDF" class="btn btn-accent">Create Fillable PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 py-6 grid lg:grid-cols-[260px,1fr] gap-6">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="glass-2 p-4 h-max sticky top-20" data-animate="fade-in">
+      <div class="mb-3 text-sm uppercase tracking-widest text-white/70">Sections</div>
+      <nav class="space-y-1">
+        <a class="nav-link" href="#identity"><i data-lucide="user"></i><span>Identity</span></a>
+        <a class="nav-link" href="#attributes"><i data-lucide="bar-chart-3"></i><span>Attributes</span></a>
+        <a class="nav-link" href="#skills"><i data-lucide="list-checks"></i><span>Skills</span></a>
+        <a class="nav-link" href="#disciplines"><i data-lucide="flame"></i><span>Disciplines</span></a>
+        <a class="nav-link" href="#advantages"><i data-lucide="scroll-text"></i><span>Advantages & Notes</span></a>
+        <a class="nav-link" href="#roller"><i data-lucide="dice-5"></i><span>Dice Roller</span></a>
+      </nav>
+      <div class="hr my-4"></div>
+      <label class="flex items-center gap-2 mini">
+        <input id="freeMode" type="checkbox" class="accent-red-600"> Free Allocation
+      </label>
+      <div class="mt-2 mini">Autosaves locally</div>
+    </aside>
+
+    <!-- Main -->
+    <main class="space-y-8">
+      <!-- Identity -->
+      <section id="identity" class="glass p-6 space-y-4" data-animate="fade-in">
+        <div class="flex items-center justify-between">
+          <h2 class="title text-xl">Identity</h2>
+          <div class="flex items-center gap-2">
+            <span class="pill">Builder</span>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div>
+            <label class="mini block mb-1">Character Name</label>
+            <input id="name" class="input" placeholder="e.g., Aveline Moreau">
+          </div>
+          <div>
+            <label class="mini block mb-1">Concept</label>
+            <input id="concept" class="input" placeholder="e.g., Nightlife fixer; poet laureate of Elysium">
+          </div>
+          <div>
+            <label class="mini block mb-1">Chronicle / Coterie</label>
+            <input id="chronicle" class="input" placeholder="e.g., Long Night in the Valley">
+          </div>
+        </div>
+        <div class="grid md:grid-cols-4 gap-4">
+          <div>
+            <label class="mini block mb-1">Clan</label>
+            <select id="clan" class="input"></select>
+          </div>
+          <div>
+            <label class="mini block mb-1">Generation</label>
+            <select id="generation" class="input"></select>
+            <p class="mini subtle mt-1">Adjusts Blood Potency suggestion.</p>
+          </div>
+          <div>
+            <label class="mini block mb-1">Sire</label>
+            <input id="sire" class="input" placeholder="e.g., Isadora (Tremere)">
+          </div>
+          <div>
+            <label class="mini block mb-1">Predator Type</label>
+            <select id="predator" class="input"></select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Attributes -->
+      <section id="attributes" class="glass p-6 space-y-5" data-animate="fade-in">
+        <div class="flex items-center justify-between">
+          <h2 class="title text-xl">Attributes</h2>
+          <div class="mini">Budget <span id="attrBudget" class="pill">Primary 4 • Secondary 3 • Tertiary 3</span></div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+          <div class="glass-2 p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold">Physical</span>
+              <select id="attrPrimaryPhysical" class="pill mini">
+                <option value="">Set as…</option>
+                <option value="primary">Primary</option>
+                <option value="secondary">Secondary</option>
+                <option value="tertiary">Tertiary</option>
+              </select>
+            </div>
+            <div class="space-y-3" id="attr-physical"></div>
+          </div>
+          <div class="glass-2 p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold">Social</span>
+              <select id="attrPrimarySocial" class="pill mini">
+                <option value="">Set as…</option>
+                <option value="primary">Primary</option>
+                <option value="secondary">Secondary</option>
+                <option value="tertiary">Tertiary</option>
+              </select>
+            </div>
+            <div class="space-y-3" id="attr-social"></div>
+          </div>
+          <div class="glass-2 p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-semibold">Mental</span>
+              <select id="attrPrimaryMental" class="pill mini">
+                <option value="">Set as…</option>
+                <option value="primary">Primary</option>
+                <option value="secondary">Secondary</option>
+                <option value="tertiary">Tertiary</option>
+              </select>
+            </div>
+            <div class="space-y-3" id="attr-mental"></div>
+          </div>
+        </div>
+        <p class="mini subtle">Each Attribute starts at 1; add dots using budgets above (toggle “Free Allocation” to ignore budgeting).</p>
+      </section>
+
+      <!-- Skills -->
+      <section id="skills" class="glass p-6 space-y-5" data-animate="fade-in">
+        <div class="flex items-center justify-between">
+          <h2 class="title text-xl">Skills</h2>
+          <div class="mini">Budget <span id="skillBudget" class="pill">Primary 11 • Secondary 7 • Tertiary 4</span></div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6" id="skills-grid"></div>
+        <p class="mini subtle">Click dots to assign. Add specialties in the text fields.</p>
+      </section>
+
+      <!-- Disciplines -->
+      <section id="disciplines" class="glass p-6 space-y-5" data-animate="fade-in">
+        <div class="flex items-center justify-between">
+          <h2 class="title text-xl">Disciplines & Powers</h2>
+          <div class="mini">Starting pool: <span class="pill" id="discPool">3 dots</span></div>
+        </div>
+        <div id="disciplineArea" class="space-y-4"></div>
+        <p class="mini subtle">Clan selection preloads in-clan Disciplines; you can still add out-of-clan (cost awareness is on you/Storyteller).</p>
+      </section>
+
+      <!-- Advantages & Notes -->
+      <section id="advantages" class="glass p-6 space-y-5" data-animate="fade-in">
+        <h2 class="title text-xl">Advantages, Touchstones, Notes</h2>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="mini block mb-1">Merits/Backgrounds</label>
+            <textarea id="advantagesTxt" rows="6" class="input" placeholder="Resources ••, Herd •, Mawla •"></textarea>
+          </div>
+          <div>
+            <label class="mini block mb-1">Convictions & Touchstones</label>
+            <textarea id="touchstones" rows="6" class="input" placeholder="Conviction: Never harm the poor; Touchstone: Aunt Rosa (mortal)"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dice Roller -->
+      <section id="roller" class="glass p-6 space-y-5" data-animate="fade-in">
+        <div class="flex items-center justify-between">
+          <h2 class="title text-xl">Dice Roller</h2>
+          <div class="mini">V5: successes on 6–9; 10s pair for criticals; messy/bestial via Hunger.</div>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-4">
+          <div>
+            <label class="mini block mb-1">Attribute</label>
+            <select id="rollAttr" class="input"></select>
+          </div>
+          <div>
+            <label class="mini block mb-1">Skill</label>
+            <select id="rollSkill" class="input"></select>
+          </div>
+          <div>
+            <label class="mini block mb-1">Modifier</label>
+            <input id="rollMod" class="input" type="number" value="0">
+          </div>
+          <div>
+            <label class="mini block mb-1">Hunger (0–5)</label>
+            <input id="rollHunger" class="input" type="number" value="1" min="0" max="5">
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="btnRoll" class="btn btn-accent">Roll Dice</button>
+          <div class="mini">Difficulty: <input id="rollDiff" type="number" value="2" class="input w-20 inline-block"></div>
+        </div>
+
+        <div id="rollOutput" class="mt-4 p-4 rounded-lg bg-black/35 border border-white/5"></div>
+      </section>
+
+      <footer class="mini subtle text-center pt-2 pb-8">Built for fast chronicle prep. All data stays in your browser until you export.</footer>
+    </main>
+  </div>
+
+  <script>
+    // ---------------------------
+    // Data: Clans, Disciplines, Skills, Predators, Attributes
+    // ---------------------------
+
+    const CLANS = [
+      // Core
+      { name:'Brujah', inClan:['Celerity','Potence','Presence'] },
+      { name:'Gangrel', inClan:['Animalism','Fortitude','Protean'] },
+      { name:'Malkavian', inClan:['Auspex','Dominate','Obfuscate'] },
+      { name:'Nosferatu', inClan:['Animalism','Obfuscate','Potence'] },
+      { name:'Toreador', inClan:['Auspex','Celerity','Presence'] },
+      { name:'Tremere', inClan:['Auspex','Blood Sorcery','Dominate'] },
+      { name:'Ventrue', inClan:['Dominate','Fortitude','Presence'] },
+      { name:'Caitiff', inClan:[] },
+
+      // Player’s Guide / Companion
+      { name:'Banu Haqim', inClan:['Blood Sorcery','Celerity','Obfuscate'] },
+      { name:'Hecata', inClan:['Auspex','Fortitude','Oblivion'] },
+      { name:'Lasombra', inClan:['Dominate','Oblivion','Potence'] },
+      { name:'The Ministry', inClan:['Obfuscate','Presence','Protean'] },
+      { name:'Ravnos', inClan:['Animalism','Obfuscate','Presence'] },
+      { name:'Salubri', inClan:['Auspex','Dominate','Fortitude'] },
+      { name:'Tzimisce', inClan:['Animalism','Dominate','Protean'] },
+    ];
+
+    const DISCIPLINES = [
+      'Animalism','Auspex','Blood Sorcery','Celerity','Dominate',
+      'Fortitude','Obfuscate','Oblivion','Potence','Presence','Protean'
+    ];
+
+    const ATTR_GROUPS = {
+      Physical: ['Strength','Dexterity','Stamina'],
+      Social:   ['Charisma','Manipulation','Composure'],
+      Mental:   ['Intelligence','Wits','Resolve'],
+    };
+
+    const SKILLS = {
+      Physical: ['Athletics','Brawl','Craft','Drive','Firearms','Larceny','Melee','Stealth','Survival'],
+      Social:   ['Animal Ken','Etiquette','Insight','Intimidation','Leadership','Performance','Persuasion','Streetwise','Subterfuge'],
+      Mental:   ['Academics','Awareness','Finance','Investigation','Medicine','Occult','Politics','Science','Technology']
+    };
+
+    const PREDATORS = [
+      'Alleycat','Bagger','Blood Leech','Cleaver','Consensualist','Farmer',
+      'Osiris','Sandman','Scene Queen','Siren'
+    ];
+
+    const GENERATIONS = [4,5,6,7,8,9,10,11,12,13,14,15,16];
+
+    // Default budgets (common V5 spread)
+    const DEFAULT_ATTR_BUDGET = {primary:4, secondary:3, tertiary:3};
+    const DEFAULT_SKILL_BUDGET = {primary:11, secondary:7, tertiary:4};
+    const DEFAULT_DISCIPLINE_POOL = 3;
+
+    // State
+    const S = {
+      character: {
+        name:'', concept:'', chronicle:'', clan:'Brujah', generation:13, sire:'',
+        predator:'Alleycat',
+        attributes: { // all start at 1
+          Strength:1, Dexterity:1, Stamina:1,
+          Charisma:1, Manipulation:1, Composure:1,
+          Intelligence:1, Wits:1, Resolve:1
+        },
+        attrGroupPriority: {Physical:'', Social:'', Mental:''}, // primary/sec/ter
+        skills: {}, // e.g. Athletics:0 …
+        specialties: {}, // e.g. Athletics: "Parkour"
+        disciplines: {}, // { Dominate: 2, Auspex:1 }
+        disciplinePowers: {}, // { Dominate: ["Cloud Memory (•)"], … }
+        advantages:'', touchstones:''
+      },
+      freeMode:false,
+      discPool: DEFAULT_DISCIPLINE_POOL,
+    };
+    Object.values(SKILLS).flat().forEach(sk => S.character.skills[sk]=0);
+
+    // ---------------------------
+    // Helpers
+    // ---------------------------
+    function $(id){ return document.getElementById(id); }
+    function el(tag, attrs={}, kids=[]){
+      const e=document.createElement(tag);
+      Object.entries(attrs).forEach(([k,v])=> {
+        if(k==='class') e.className=v; else if(k==='html') e.innerHTML=v; else e.setAttribute(k,v);
+      });
+      kids.forEach(k => e.appendChild(k));
+      return e;
+    }
+    function saveLocal(){ localStorage.setItem('v5_kindred_builder', JSON.stringify(S)); }
+    function loadLocal(){
+      const raw = localStorage.getItem('v5_kindred_builder');
+      if(!raw) return false;
+      try{ Object.assign(S, JSON.parse(raw)); return true; } catch { return false; }
+    }
+    function setClanInClan(){ const c = CLANS.find(x=>x.name===S.character.clan); return c ? c.inClan : []; }
+    function attrGroupOf(attr){
+      if(ATTR_GROUPS.Physical.includes(attr)) return 'Physical';
+      if(ATTR_GROUPS.Social.includes(attr)) return 'Social';
+      return 'Mental';
+    }
+    function attrGroupBudgetUsed(group){
+      const budget = DEFAULT_ATTR_BUDGET;
+      const pr = S.character.attrGroupPriority[group]||'';
+      if(!pr) return {used:0, limit:0};
+      const attrs = ATTR_GROUPS[group];
+      const sum = attrs.reduce((acc,a)=> acc + (S.character.attributes[a]||1), 0);
+      const spent = Math.max(0, sum - 3);
+      const limit = pr==='primary'?budget.primary : pr==='secondary'?budget.secondary : budget.tertiary;
+      return {used:spent, limit};
+    }
+    function skillGroupBudgetUsed(group){
+      const budget = DEFAULT_SKILL_BUDGET;
+      const pri = S.character.skillGroupPriority?.[group] || '';
+      if(!pri) return {used:0, limit:0};
+      const skills = SKILLS[group];
+      const sum = skills.reduce((acc,sk)=> acc + (S.character.skills[sk]||0), 0);
+      const limit = pri==='primary'?budget.primary : pri==='secondary'?budget.secondary : budget.tertiary;
+      return {used:sum, limit};
+    }
+
+    // ---------------------------
+    // UI Builders
+    // ---------------------------
+    function buildSelects(){
+      // Clan
+      const clanSel = $('clan');
+      clanSel.innerHTML = '';
+      CLANS.forEach(c=> clanSel.appendChild(el('option',{value:c.name, html:c.name})));
+      clanSel.value = S.character.clan;
+      clanSel.onchange = ()=>{ S.character.clan = clanSel.value; renderDisciplines(); saveLocal(); };
+
+      // Generation
+      const genSel = $('generation'); genSel.innerHTML='';
+      GENERATIONS.forEach(g=> genSel.appendChild(el('option',{value:g, html:g})));
+      genSel.value = S.character.generation;
+      genSel.onchange=()=>{ S.character.generation = parseInt(genSel.value,10); saveLocal(); };
+
+      // Predator
+      const predSel = $('predator'); predSel.innerHTML='';
+      PREDATORS.forEach(p=> predSel.appendChild(el('option',{value:p, html:p})));
+      predSel.value = S.character.predator;
+      predSel.onchange=()=>{ S.character.predator = predSel.value; saveLocal(); };
+
+      // Identity fields
+      $('name').value = S.character.name||'';
+      $('concept').value = S.character.concept||'';
+      $('chronicle').value = S.character.chronicle||'';
+      $('sire').value = S.character.sire||'';
+      $('name').oninput=()=>{ S.character.name=$('name').value; saveLocal(); };
+      $('concept').oninput=()=>{ S.character.concept=$('concept').value; saveLocal(); };
+      $('chronicle').oninput=()=>{ S.character.chronicle=$('chronicle').value; saveLocal(); };
+      $('sire').oninput=()=>{ S.character.sire=$('sire').value; saveLocal(); };
+    }
+
+    function buildAttributes(){
+      const setPri = (id, group)=>{
+        const sel=$(id);
+        sel.value = S.character.attrGroupPriority[group] || '';
+        sel.onchange = ()=>{
+          const val = sel.value;
+          Object.keys(S.character.attrGroupPriority).forEach(g=>{
+            if(g!==group && S.character.attrGroupPriority[g]===val) S.character.attrGroupPriority[g]='';
+          });
+          S.character.attrGroupPriority[group] = val;
+          renderAttributes(); saveLocal();
+        }
+      };
+      setPri('attrPrimaryPhysical','Physical');
+      setPri('attrPrimarySocial','Social');
+      setPri('attrPrimaryMental','Mental');
+      renderAttributes();
+    }
+
+    function dotRow(holder, label, value, onSet, max=5, groupHint){
+      const row = el('div',{class:'flex items-center justify-between'});
+      row.appendChild(el('div',{class:'flex items-center gap-2'},[
+        el('span',{class:'pill mini'},[document.createTextNode(groupHint||'')]),
+        el('span',{class:'font-medium', html:label})
+      ]));
+      const dots = el('div',{class:'flex items-center'});
+      for(let i=1;i<=max;i++){
+        const d = el('div',{class:'dot'+(value>=i?' active':''), 'data-val':i});
+        d.onclick = ()=> onSet(i);
+        dots.appendChild(d);
+      }
+      row.appendChild(dots);
+      holder.appendChild(row);
+    }
+
+    function renderAttributes(){
+      const sections = {
+        physical: $('attr-physical'),
+        social: $('attr-social'),
+        mental: $('attr-mental'),
+      };
+      Object.entries(sections).forEach(([key, holder])=>{
+        holder.innerHTML='';
+        const group = key[0].toUpperCase()+key.slice(1);
+        ATTR_GROUPS[group].forEach(attr=>{
+          dotRow(holder, attr, S.character.attributes[attr], (i)=>{
+            S.character.attributes[attr]=i; saveLocal(); renderAttributes();
+          }, 5, group);
+        });
+        const info = attrGroupBudgetUsed(group);
+        const hint = el('div',{class:'mini mt-2 '+(!S.freeMode && info.used>info.limit?'text-red-300':'subtle') , html: S.freeMode? 'Free allocation enabled' : `Spent ${info.used} / ${info.limit} in ${group}`});
+        holder.appendChild(hint);
+      });
+      $('attrBudget').textContent = S.freeMode ? 'Free' : 'Primary 4 • Secondary 3 • Tertiary 3';
+    }
+
+    function buildSkills(){
+      const grid = $('skills-grid'); grid.innerHTML='';
+      if(!S.character.skillGroupPriority) S.character.skillGroupPriority = {Physical:'',Social:'',Mental:''};
+
+      Object.entries(SKILLS).forEach(([group, list])=>{
+        const col = el('div',{class:'glass-2 p-4'});
+        const head = el('div',{class:'flex items-center justify-between mb-2'},[
+          el('span',{class:'font-semibold', html:group}),
+        ]);
+        const priSel = el('select',{class:'pill mini'});
+        ['','primary','secondary','tertiary'].forEach(v=>{
+          const opt = el('option',{value:v, html: v? (v[0].toUpperCase()+v.slice(1)) : 'Set as…'}); priSel.appendChild(opt);
+        });
+        priSel.value = S.character.skillGroupPriority[group] || '';
+        priSel.onchange = ()=>{
+          const val = priSel.value;
+          Object.keys(S.character.skillGroupPriority).forEach(g=>{
+            if(g!==group && S.character.skillGroupPriority[g]===val) S.character.skillGroupPriority[g]='';
+          });
+          S.character.skillGroupPriority[group] = val;
+          renderSkills(); saveLocal();
+        };
+        head.appendChild(priSel);
+        col.appendChild(head);
+
+        const section = el('div',{id:`skills-${group}`, class:'space-y-3'});
+        list.forEach(sk=>{
+          const row = el('div',{class:'grid grid-cols-12 items-center gap-2'});
+          const name = el('div',{class:'col-span-4'},[ el('span',{class:'font-medium', html:sk}) ]);
+          const dots = el('div',{class:'col-span-4 flex items-center'});
+          for(let i=0;i<=5;i++){
+            const d = el('div',{class:'dot'+(S.character.skills[sk]>=i && i>0 ?' active':''), 'data-skill':sk, 'data-val':i, title:`${i} dot${i===1?'':'s'}`});
+            d.onclick = ()=>{ S.character.skills[sk]=i; saveLocal(); renderSkills(); };
+            dots.appendChild(d);
+          }
+          const spec = el('div',{class:'col-span-4'},[
+            el('input',{class:'input', placeholder:'Specialty', value: S.character.specialties[sk]||'', id:`spec-${sk}`})
+          ]);
+          section.appendChild(row);
+          row.appendChild(name); row.appendChild(dots); row.appendChild(spec);
+          spec.querySelector('input').oninput = (e)=>{ S.character.specialties[sk]=e.target.value; saveLocal(); };
+        });
+
+        col.appendChild(section);
+        const info = skillGroupBudgetUsed(group);
+        col.appendChild(el('div',{class:'mini mt-2 '+(!S.freeMode && info.used>info.limit?'text-red-300':'subtle'), html: S.freeMode? 'Free allocation enabled' : `Spent ${info.used} / ${info.limit} in ${group}`}));
+        grid.appendChild(col);
+      });
+
+      $('skillBudget').textContent = S.freeMode ? 'Free' : 'Primary 11 • Secondary 7 • Tertiary 4';
+    }
+    function renderSkills(){ buildSkills(); }
+
+    // Disciplines
+    function addDisciplineRow(idx){
+      const wrap = el('div',{class:'grid md:grid-cols-6 gap-3 items-end glass-2 p-3'});
+      const sel = el('select',{class:'input', id:`disc-${idx}`});
+      sel.appendChild(el('option',{value:'', html:'— Discipline —'}));
+      DISCIPLINES.forEach(d=> sel.appendChild(el('option',{value:d, html:d})));
+      const current = Object.entries(S.character.disciplines)[idx];
+      if(current){ sel.value = current[0]; }
+      sel.onchange = ()=>{
+        const d = sel.value;
+        const prev = current? current[0] : null;
+        if(prev && d!==prev){
+          const dots = S.character.disciplines[prev]; delete S.character.disciplines[prev];
+          if(d) S.character.disciplines[d] = (dots||0);
+        } else if(d && !S.character.disciplines[d]){
+          S.character.disciplines[d] = 0;
+        }
+        saveLocal(); renderDisciplines();
+      };
+
+      const dotWrap = el('div',{id:`disc-dots-${idx}`, class:'col-span-2'});
+      const powerWrap = el('div',{id:`disc-powers-${idx}`, class:'col-span-3'});
+
+      wrap.appendChild(sel);
+      wrap.appendChild(dotWrap);
+      wrap.appendChild(powerWrap);
+      $('disciplineArea').appendChild(wrap);
+      renderDisciplineRow(idx);
+    }
+
+    function isInClan(disc){ return setClanInClan().includes(disc); }
+    function updateDiscPoolPill(){ $('discPool').textContent = `${S.discPool} dots`; }
+
+    function renderDisciplineRow(idx){
+      const pair = Object.entries(S.character.disciplines)[idx];
+      const dotsHolder = $(`disc-dots-${idx}`);
+      const powersHolder = $(`disc-powers-${idx}`);
+      dotsHolder.innerHTML=''; powersHolder.innerHTML='';
+      if(!pair){
+        dotsHolder.appendChild(el('div',{class:'mini subtle', html:'Pick a Discipline to assign dots'}));
+        return;
+      }
+      const [disc, dots] = pair;
+
+      const row = el('div',{class:'flex items-center gap-2'});
+      row.appendChild(el('span',{class:'pill mini '+(isInClan(disc)?'':'border-red-900 text-red-200 bg-red-900/10')},[document.createTextNode(isInClan(disc)?'In-clan':'Out-of-clan')]));
+      for(let i=0;i<=5;i++){
+        const d = el('div',{class:'dot'+(dots>=i && i>0?' active':''), title:`${i} dot${i===1?'':'s'}`});
+        d.onclick = ()=>{
+          if(!S.freeMode){
+            const total = Object.values(S.character.disciplines).reduce((a,b)=>a+b,0);
+            const delta = i - (S.character.disciplines[disc]||0);
+            if(delta>0 && total + delta > DEFAULT_DISCIPLINE_POOL){ return; }
+          }
+          S.character.disciplines[disc]=i; saveLocal(); renderDisciplines();
+        };
+        row.appendChild(d);
+      }
+      dotsHolder.appendChild(row);
+
+      const list = el('div',{class:'grid sm:grid-cols-2 gap-2'});
+      const rating = S.character.disciplines[disc]||0;
+      for(let r=1;r<=Math.min(5, rating); r++){
+        const fld = el('input',{class:'input', placeholder:`${disc} Power ${r}`, value:(S.character.disciplinePowers[disc]?.[r-1]||'')});
+        fld.oninput = (e)=>{
+          if(!S.character.disciplinePowers[disc]) S.character.disciplinePowers[disc]=[];
+          S.character.disciplinePowers[disc][r-1]=e.target.value; saveLocal();
+        };
+        list.appendChild(fld);
+      }
+      powersHolder.appendChild(list);
+
+      const used = Object.values(S.character.disciplines).reduce((a,b)=>a+b,0);
+      S.discPool = Math.max(0, DEFAULT_DISCIPLINE_POOL - used);
+      updateDiscPoolPill();
+    }
+
+    function renderDisciplines(){
+      $('disciplineArea').innerHTML='';
+      Object.entries(S.character.disciplines).forEach((_,idx)=> addDisciplineRow(idx));
+      addDisciplineRow(Object.keys(S.character.disciplines).length);
+    }
+
+    // Dice Roller
+    function buildDiceRoller(){
+      const ra = $('rollAttr'), rs=$('rollSkill');
+      ra.innerHTML=''; rs.innerHTML='';
+      Object.keys(S.character.attributes).forEach(a=> ra.appendChild(el('option',{value:a, html:a})));
+      Object.keys(S.character.skills).forEach(s=> rs.appendChild(el('option',{value:s, html:s})));
+      $('btnRoll').onclick = rollDice;
+    }
+
+    function successesFrom(d){ return d===10 ? 1 : (d>=6?1:0); }
+    function rollDice(){
+      const a = $('rollAttr').value;
+      const s = $('rollSkill').value;
+      const mod = parseInt($('rollMod').value||0,10);
+      const hunger = Math.max(0, Math.min(5, parseInt($('rollHunger').value||0,10)));
+      const diff = Math.max(0, parseInt($('rollDiff').value||0,10));
+
+      const pool = (S.character.attributes[a]||0)+(S.character.skills[s]||0)+mod;
+      const reg = Math.max(0, pool - hunger);
+      const dice = [];
+      for(let i=0;i<reg;i++) dice.push({val: Math.floor(Math.random()*10)+1, hunger:false});
+      for(let i=0;i<hunger;i++) dice.push({val: Math.floor(Math.random()*10)+1, hunger:true});
+
+      let base=0, tens=0, hungerTens=0, hungerOnes=0;
+      dice.forEach(d=>{
+        base += successesFrom(d.val);
+        if(d.val===10){ tens++; if(d.hunger) hungerTens++; }
+        if(d.val===1 && d.hunger) hungerOnes++;
+      });
+
+      const critPairs = Math.floor(tens/2);
+      const bonusCrit = critPairs*2;
+      const total = base + bonusCrit;
+      const messy = critPairs>0 && hungerTens>=1; // any crit using a hunger 10
+      const bestial = (total===0 && hungerOnes>0);
+
+      const out = $('rollOutput');
+      const dieHTML = d => `<span class="die ${d.hunger?'hunger':''} ${d.val===10?'crit':''}">${d.val}</span>`;
+      const badge = (txt, tone) => `<span class="pill" style="border-color:${tone==='ok'?'#106a4a':tone==='warn'?'#7a5a20':'#7a2020'}; background:${tone==='ok'?'#0b2d22':tone==='warn'?'#2d210b':'#2d0b0b'}">${txt}</span>`;
+
+      out.innerHTML = `
+        <div class="space-y-2">
+          <div class="flex flex-wrap items-center">${dice.map(dieHTML).join('')}</div>
+          <div class="hr my-2"></div>
+          <div class="flex items-center gap-2">
+            <div>Successes: <span class="font-semibold">${total}</span> ${critPairs?badge('+'+bonusCrit+' crit','ok'):''}</div>
+            <div class="mini subtle">Pool ${pool} (${reg} regular, ${hunger} Hunger) vs Difficulty ${diff}</div>
+          </div>
+          <div class="flex items-center gap-2">
+            ${ total>=diff ? badge('Success','ok') : badge('Fail','warn') }
+            ${ messy ? badge('Messy Critical','warn') : '' }
+            ${ bestial ? badge('Bestial Failure','bad') : '' }
+          </div>
+        </div>
+      `;
+    }
+
+    // ---------------------------
+    // PDF Export (fillable) — styled
+    // ---------------------------
+    async function buildPDF(){
+      const { PDFDocument, rgb, StandardFonts } = PDFLib;
+      const pdf = await PDFDocument.create();
+      const page = pdf.addPage([612, 792]); // Letter
+      const font = await pdf.embedFont(StandardFonts.Helvetica);
+      const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+      const drawText = (txt,x,y,size=10,f=font,color=rgb(0.92,0.95,1))=>{
+        page.drawText(txt,{x,y,size,font:f,color});
+      };
+      const field = async (name, x, y, w=200, h=18, value='')=>{
+        const form = pdf.getForm();
+        let f = form.getTextField(name);
+        if(!f){ f = form.createTextField(name); }
+        f.setText(value);
+        f.addToPage(page, {
+          x,y,width:w,height:h,
+          borderWidth:1,
+          borderColor:rgb(0.25,0.28,0.35),
+          textColor:rgb(0,0,0),
+          backgroundColor:rgb(1,1,1)
+        });
+      };
+
+      // Background panel
+      page.drawRectangle({ x:28, y:40, width:556, height:712, color:rgb(0.06,0.07,0.09) });
+      page.drawRectangle({ x:28, y:40, width:556, height:712, borderWidth:1, borderColor:rgb(0.18,0.2,0.24) });
+
+      // Header
+      drawText('VTM V5 – Kindred Character Sheet', 36, 742, 16, bold, rgb(0.85,0.25,0.28));
+
+      // Identity
+      drawText('Identity', 36, 720, 12, bold);
+      await field('Name', 36, 700, 240, 18, S.character.name||'');
+      await field('Concept', 290, 700, 240, 18, S.character.concept||'');
+      await field('Chronicle', 36, 676, 240, 18, S.character.chronicle||'');
+      await field('Clan', 290, 676, 150, 18, S.character.clan||'');
+      await field('Generation', 450, 676, 80, 18, String(S.character.generation||''));
+      await field('Sire', 36, 652, 240, 18, S.character.sire||'');
+      await field('Predator', 290, 652, 240, 18, S.character.predator||'');
+
+      // Attributes (left)
+      drawText('Attributes', 36, 630, 12, bold);
+      let yA = 612;
+      Object.entries(S.character.attributes).forEach(([k,v])=>{
+        drawText(k, 36, yA);
+        const filled = Math.min(5, Math.max(1, v||1));
+        // bar frame
+        page.drawRectangle({x:120, y:yA-2, width:140, height:10, borderColor:rgb(0.25,0.28,0.35), borderWidth:1});
+        // filled bar
+        page.drawRectangle({x:121, y:yA-1, width: filled*(140/5)-2, height:8, color:rgb(0.85,0.25,0.28)});
+        yA-=16;
+      });
+
+      // Skills (right)
+      drawText('Skills', 300, 630, 12, bold);
+      let yS = 612;
+      Object.entries(S.character.skills).forEach(([k,v])=>{
+        drawText(k, 300, yS);
+        const filled = Math.min(5, Math.max(0, v||0));
+        page.drawRectangle({x:440, y:yS-2, width:140, height:10, borderColor:rgb(0.25,0.28,0.35), borderWidth:1});
+        if(filled>0) page.drawRectangle({x:441, y:yS-1, width: filled*(140/5)-2, height:8, color:rgb(0.85,0.25,0.28)});
+        yS-=12;
+      });
+
+      // Disciplines & Powers
+      drawText('Disciplines', 36, 348, 12, bold);
+      let yD = 330;
+      Object.entries(S.character.disciplines).forEach(([k,v])=>{
+        drawText(`${k} ${'•'.repeat(v)}`, 36, yD);
+        const powers = S.character.disciplinePowers[k]||[];
+        for(let i=0;i<Math.min(5,v);i++){
+          const lineY = yD - 14 - (i*16);
+          field(`${k} Power ${i+1}`, 36, lineY, 260, 14, powers[i]||'');
+        }
+        yD -= (v>0? (16*Math.min(5,v)+12) : 16);
+      });
+
+      // Advantages & Touchstones
+      drawText('Advantages / Backgrounds', 318, 348, 12, bold);
+      await field('Advantages', 318, 330, 266, 60, S.character.advantages||'');
+      drawText('Convictions & Touchstones', 318, 258, 12, bold);
+      await field('Touchstones', 318, 240, 266, 60, S.character.touchstones||'');
+
+      // Footer
+      drawText('Generated with V5 Kindred Character Builder', 36, 52, 9, font, rgb(0.65,0.7,0.78));
+
+      const pdfBytes = await pdf.save();
+      const blob = new Blob([pdfBytes], {type:'application/pdf'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = (S.character.name?.trim()||'kindred')+'_v5_fillable.pdf';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // ---------------------------
+    // Events: Save/Load/New/Export/Import
+    // ---------------------------
+    function bindTopbar(){
+      $('btnNew').onclick = ()=>{
+        if(!confirm('Clear current character?')) return;
+        const keepFree = S.freeMode;
+        Object.assign(S, { character: JSON.parse(JSON.stringify({
+          name:'',concept:'',chronicle:'',clan:'Brujah',generation:13,sire:'',
+          predator:'Alleycat',
+          attributes:{
+            Strength:1,Dexterity:1,Stamina:1,
+            Charisma:1,Manipulation:1,Composure:1,
+            Intelligence:1,Wits:1,Resolve:1
+          },
+          attrGroupPriority:{Physical:'',Social:'',Mental:''},
+          skills:Object.fromEntries(Object.values(SKILLS).flat().map(sk=>[sk,0])),
+          specialties:{},
+          disciplines:{},
+          disciplinePowers:{},
+          advantages:'', touchstones:''
+        })), freeMode: keepFree, discPool: DEFAULT_DISCIPLINE_POOL });
+        initUI(); saveLocal();
+      };
+      $('btnSave').onclick = saveLocal;
+      $('btnLoad').onclick = ()=>{ if(loadLocal()) initUI(); };
+      $('btnExport').onclick = ()=>{
+        const blob = new Blob([JSON.stringify(S,null,2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href=url; a.download=(S.character.name?.trim()||'kindred')+'_builder.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      };
+      $('importJson').onchange = (e)=>{
+        const file = e.target.files?.[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          try{ Object.assign(S, JSON.parse(reader.result)); initUI(); saveLocal(); }
+          catch{ alert('Invalid JSON'); }
+        };
+        reader.readAsText(file);
+      };
+      $('btnPDF').onclick = buildPDF;
+      $('freeMode').checked = !!S.freeMode;
+      $('freeMode').onchange = ()=>{ S.freeMode = $('freeMode').checked; renderAttributes(); renderSkills(); saveLocal(); };
+
+      // Advantages / Touchstones
+      $('advantagesTxt').value = S.character.advantages||'';
+      $('advantagesTxt').oninput = ()=>{ S.character.advantages=$('advantagesTxt').value; saveLocal(); };
+      $('touchstones').value = S.character.touchstones||'';
+      $('touchstones').oninput = ()=>{ S.character.touchstones=$('touchstones').value; saveLocal(); };
+    }
+
+    // ---------------------------
+    // Init
+    // ---------------------------
+    function buildDisciplinesShell(){
+      $('disciplineArea').innerHTML='';
+      for(let i=0;i<6;i++){ addDisciplineRow(i); }
+      updateDiscPoolPill();
+    }
+    function buildUIOnce(){
+      buildSelects();
+      buildAttributes();
+      buildSkills();
+      buildDisciplinesShell();
+      buildDiceRoller();
+      bindTopbar();
+    }
+    function initUI(){ buildUIOnce(); }
+
+    (function init(){
+      loadLocal();
+      initUI();
+      // hydrate icons
+      if(window.lucide){ window.lucide.createIcons(); }
+    })();
+  </script>
+</body>
+</html>
