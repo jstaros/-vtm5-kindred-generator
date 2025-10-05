@@ -25,7 +25,13 @@ Create and customize Kindred characters, allocate attributes and skills with poi
 
 ---
 
-## How to use
+## How to access
+
+Visit: https://jstaros.github.io/vtm5-kindred-generator/
+
+---
+
+## Guide / How to use
 
 1. **Identity** – Choose your Clan, Generation, and Predator Type. Add name, concept, chronicle, and sire.
 2. **Attributes** – Select one group as Primary, one as Secondary, one as Tertiary, and assign dots according to the point budget.
